@@ -9,7 +9,11 @@
 
 class MarketSimulator {
 public:
-    MarketSimulator() = default; 
+    MarketSimulator() = default;
+    MarketSimulator(const MarketSimulator&) = delete;
+    MarketSimulator& operator=(MarketSimulator&) = delete;
+    MarketSimulator(MarketSimulator&&) = delete;
+    MarketSimulator& operator=(const MarketSimulator&&) = delete; 
     void do_simulate_daily(double bonusRate = 0.0);
     void add_to_assets(Portfolio* p);
     unsigned get_day_count() { return simulation_day_count; } 

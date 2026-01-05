@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 // Class declaration
 class Portfolio;
@@ -19,13 +20,20 @@ class Portfolio {
 public:
     // Non-delegating constructor
     Portfolio(double val, std::string o, std::string c) :
-        current_value(val), owner(o), currency(c) { }
+        current_value(val), owner(o), currency(c) 
+        { 
+            if(val < 0) 
+                throw std::runtime_error("Current value must be greater-equal than zero!");
+        }
     
     // Delegating constructors
-    explicit Portfolio() : Portfolio(0.0, "Unknown", "USD") { }
+    explicit Portfolio() : Portfolio(0.0, "Unknown", "USD") { } // Excp. not needed, but safe, prevents accidental initialization 
+    explicit Portfolio(double val) : Portfolio(val, "Unknown", "USD") { }
     
     // Static member functions
     static void update_global_vol(double newVol) {
+        if (newVol < 0) 
+            throw std::runtime_error("Volatily value must be greater-equal than zero");
         global_market_volatility = newVol; 
     }
     
