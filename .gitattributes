@@ -1,1 +1,9 @@
-Makefile linguist-documentation=false
+# Escludi tutti i file dal rilevamento statistico
+* linguist-detectable=false
+
+# Forza il rilevamento per le estensioni C++
+*.cpp linguist-detectable=true
+*.hpp linguist-detectable=true
+*.cc linguist-detectable=true
+*.cxx linguist-detectable=true
+*.h linguist-detectable=true
