@@ -1,0 +1,3 @@
+/Users/ettoremiglioranza/Projects/riskEngine/build/CMakeFiles/riskEngine.dir
+/Users/ettoremiglioranza/Projects/riskEngine/build/CMakeFiles/edit_cache.dir
+/Users/ettoremiglioranza/Projects/riskEngine/build/CMakeFiles/rebuild_cache.dir
