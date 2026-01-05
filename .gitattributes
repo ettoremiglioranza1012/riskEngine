@@ -1,1 +1,1 @@
-Makefile linguist-documentation=true
+Makefile linguist-documentation=false
