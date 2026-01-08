@@ -109,6 +109,9 @@ int main() {
         auto bs_model = std::make_unique<BlackScholesModel>(0.05, 0.20, 42);
         MarketSimulator market(std::move(bs_model));
         market.reserve_portfolios(3);
+        
+        // Wire market environment into simulator for CORRELATED simulation
+        market.set_market_environment(market_env);
 
         // Create shared instruments (pure DATA - no logic)
         auto apple = std::make_shared<Stock>("AAPL", 150.0);
@@ -199,85 +202,41 @@ int main() {
         std::cout << std::endl;
 
         // ====================================================================
-        // DEMONSTRATE VISITOR PATTERN - Same data, different simulation methods
+        // CORRELATED MONTE CARLO SIMULATION
+        // MarketSimulator now uses MultiAssetSimulator internally!
+        // All assets are simulated together with proper correlation.
         // ====================================================================
 
-        std::cout << "=== Monte Carlo Simulation (252 days) - UNCORRELATED ===" << std::endl;
-        std::cout << "    (Legacy method - each asset simulated independently)" << std::endl;
+        std::cout << "=== Monte Carlo Simulation (252 days) - CORRELATED ===" << std::endl;
+        std::cout << "    (Using Cholesky decomposition - assets move together)" << std::endl;
+        
+        // Store pre-simulation prices for comparison
+        double aapl_start = apple->get_price();
+        double googl_start = google->get_price();
+        double tsla_start = tesla->get_price();
+        
         market.simulate_days(252);
+        
+        // Show results
         std::cout << "Retirement: $" << market.get_portfolio_value(id_retirement) << std::endl;
         std::cout << "Savings:    $" << market.get_portfolio_value(id_savings) << std::endl;
         std::cout << "Aggressive: $" << market.get_portfolio_value(id_aggressive) << std::endl;
         std::cout << std::endl;
-
-        // ====================================================================
-        // CORRELATED SIMULATION using MultiAssetSimulator
-        // This is the CORRECT way to simulate - assets move together!
-        // ====================================================================
         
-        std::cout << "=== Correlated Multi-Asset Simulation ===" << std::endl;
-        std::cout << "    (Using Cholesky decomposition for joint dynamics)" << std::endl;
+        // Show how correlation affected price moves
+        double aapl_return = (apple->get_price() - aapl_start) / aapl_start * 100;
+        double googl_return = (google->get_price() - googl_start) / googl_start * 100;
+        double tsla_return = (tesla->get_price() - tsla_start) / tsla_start * 100;
         
-        // Reset prices to initial values
-        apple->set_price(150.0);
-        google->set_price(140.0);
-        tesla->set_price(250.0);
+        std::cout << "  Simulated Returns (correlated):" << std::endl;
+        std::cout << "    AAPL:  " << std::showpos << std::setprecision(1) << aapl_return << "%" << std::endl;
+        std::cout << "    GOOGL: " << googl_return << "%" << std::endl;
+        std::cout << "    TSLA:  " << tsla_return << "%" << std::noshowpos << std::endl;
         
-        // Create multi-asset simulator
-        BlackScholesModel bs_corr(0.05, 0.20, 123);  // Different seed for comparison
-        MultiAssetSimulator multi_sim(bs_corr, 123);
-        
-        // Initial prices
-        std::map<std::string, double> prices = {
-            {"AAPL", 150.0},
-            {"GOOGL", 140.0},
-            {"TSLA", 250.0}
-        };
-        
-        // Simulate 10 paths to show correlation in action
-        std::cout << std::endl << "  Sample paths (10 paths, 252 steps each):" << std::endl;
-        std::cout << "  Path    AAPL      GOOGL     TSLA      Observation" << std::endl;
-        std::cout << "  ----    ----      -----     ----      -----------" << std::endl;
-        
-        size_t corr_moves = 0;  // Count when all assets move same direction
-        for (int path = 0; path < 10; ++path) {
-            auto final_prices = prices;
-            double dt = 1.0 / 252.0;
-            
-            // Track daily moves for correlation check
-            std::vector<double> aapl_returns, googl_returns, tsla_returns;
-            
-            for (int step = 0; step < 252; ++step) {
-                auto prev = final_prices;
-                final_prices = multi_sim.simulate_market_step(final_prices, dt, market_env);
-                
-                if (step == 0) {  // Just check first step direction
-                    double r_aapl = (final_prices["AAPL"] - prev["AAPL"]) / prev["AAPL"];
-                    double r_googl = (final_prices["GOOGL"] - prev["GOOGL"]) / prev["GOOGL"];
-                    double r_tsla = (final_prices["TSLA"] - prev["TSLA"]) / prev["TSLA"];
-                    
-                    // Check if all moved same direction
-                    if ((r_aapl > 0 && r_googl > 0 && r_tsla > 0) ||
-                        (r_aapl < 0 && r_googl < 0 && r_tsla < 0)) {
-                        corr_moves++;
-                    }
-                }
-            }
-            
-            std::string obs = (final_prices["AAPL"] > prices["AAPL"] && 
-                              final_prices["GOOGL"] > prices["GOOGL"]) ? "AAPL↑ GOOGL↑ (corr)" : "";
-            
-            std::cout << "  " << std::setw(4) << (path + 1)
-                      << "  $" << std::setw(6) << std::setprecision(2) << final_prices["AAPL"]
-                      << "   $" << std::setw(6) << final_prices["GOOGL"]
-                      << "   $" << std::setw(6) << final_prices["TSLA"]
-                      << "   " << obs << std::endl;
-        }
-        
-        std::cout << std::endl;
-        std::cout << "  Paths where first step had all assets moving same direction: " 
-                  << corr_moves << "/10" << std::endl;
-        std::cout << "  (With ρ=0.65 correlation, we expect ~70% concordant moves)" << std::endl;
+        // Check if correlation is visible (AAPL and GOOGL should tend to move together)
+        bool aapl_googl_same_dir = (aapl_return > 0) == (googl_return > 0);
+        std::cout << "    AAPL & GOOGL moved " << (aapl_googl_same_dir ? "SAME" : "OPPOSITE") 
+                  << " direction (ρ=0.65)" << std::endl;
         std::cout << std::endl;
 
         // Apply stress test - 2008 financial crisis scenario
@@ -289,6 +248,7 @@ int main() {
         
         market.apply_stress_test(-0.30, 0.50, -0.02);
         
+        std::cout << std::setprecision(2) << std::noshowpos;
         std::cout << "Retirement: $" << market.get_portfolio_value(id_retirement) 
                   << " (Δ: " << (market.get_portfolio_value(id_retirement) - initial_retirement) << ")" << std::endl;
         std::cout << "Savings:    $" << market.get_portfolio_value(id_savings)

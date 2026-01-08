@@ -8,18 +8,23 @@
 #include <utility>
 #include <cmath>
 #include <memory>
+#include <set>
 #include "portfolio.hh"
 #include "model.hh"
 #include "visitor.hh"
+#include "marketEnvironment.hh"
 
 class MarketSimulator {
 public:
     // Constructor takes a model for simulation
     explicit MarketSimulator(std::unique_ptr<Model> model)
-        : model_(std::move(model)) {}
+        : model_(std::move(model)), 
+          multi_asset_sim_(std::make_unique<MultiAssetSimulator>(*model_)) {}
 
     // Default constructor with Black-Scholes model
-    MarketSimulator() : model_(std::make_unique<BlackScholesModel>()) {}
+    MarketSimulator() 
+        : model_(std::make_unique<BlackScholesModel>()),
+          multi_asset_sim_(std::make_unique<MultiAssetSimulator>(*model_)) {}
 
     MarketSimulator(const MarketSimulator&) = delete;
     MarketSimulator& operator=(const MarketSimulator&) = delete;
@@ -44,19 +49,68 @@ public:
     // Model access
     Model& get_model() { return *model_; }
     const Model& get_model() const { return *model_; }
-    void set_model(std::unique_ptr<Model> model) { model_ = std::move(model); }
+    void set_model(std::unique_ptr<Model> model) { 
+        model_ = std::move(model); 
+        multi_asset_sim_ = std::make_unique<MultiAssetSimulator>(*model_);
+    }
+
+    // Market environment access (for correlated simulation)
+    void set_market_environment(const MarketEnvironment& env) { market_env_ = env; }
+    MarketEnvironment& get_market_environment() { return market_env_; }
+    const MarketEnvironment& get_market_environment() const { return market_env_; }
 
     // ========================================================================
-    // SIMULATION METHODS - Use different visitors for different methods
+    // SIMULATION METHODS - CORRELATED by default
     // ========================================================================
 
-    // Monte Carlo simulation (default)
+    // Monte Carlo simulation - CORRELATED (correct method)
+    // Simulates all unique underlyings together using Cholesky decomposition
     void simulate_daily() {
+        constexpr double dt = 1.0 / 252.0;
+        
+        // Step 1: Collect all unique stock tickers and their current prices
+        std::map<std::string, double> current_prices;
+        std::map<std::string, Stock*> stock_ptrs;  // To update prices after simulation
+        
+        for (auto& portfolio : portfolios_) {
+            portfolio.snapshot_prices();  // For P&L tracking
+            collect_stocks(portfolio, current_prices, stock_ptrs);
+        }
+        
+        // Step 2: If we have stocks and a correlation matrix, do correlated simulation
+        if (!current_prices.empty() && market_env_.get_correlation_matrix().size() > 0) {
+            // Simulate all stocks together (CORRELATED)
+            auto new_prices = multi_asset_sim_->simulate_market_step(current_prices, dt, market_env_);
+            
+            // Update stock prices
+            for (auto& [ticker, new_price] : new_prices) {
+                if (stock_ptrs.count(ticker)) {
+                    stock_ptrs[ticker]->set_price(new_price);
+                }
+            }
+            
+            // Update options (re-price based on new underlying + decay time)
+            for (auto& portfolio : portfolios_) {
+                update_options(portfolio, dt);
+            }
+        } else {
+            // Fallback: uncorrelated simulation (legacy behavior)
+            MonteCarloSimulationVisitor mc_visitor(*model_, dt);
+            for (auto& portfolio : portfolios_) {
+                portfolio.accept(mc_visitor);
+            }
+        }
+        
+        ++simulation_day_count_;
+    }
+
+    // LEGACY: Uncorrelated simulation (explicitly named to discourage use)
+    void simulate_daily_uncorrelated() {
         constexpr double dt = 1.0 / 252.0;
         MonteCarloSimulationVisitor mc_visitor(*model_, dt);
         
         for (auto& portfolio : portfolios_) {
-            portfolio.snapshot_prices();  // For P&L tracking
+            portfolio.snapshot_prices();
             portfolio.accept(mc_visitor);
         }
         ++simulation_day_count_;
@@ -132,7 +186,80 @@ public:
 private:
     std::vector<Portfolio> portfolios_;
     std::unique_ptr<Model> model_;
+    std::unique_ptr<MultiAssetSimulator> multi_asset_sim_;
+    MarketEnvironment market_env_;
     unsigned simulation_day_count_ = 0;
+
+    // Helper: Collect all stocks from a portfolio
+    void collect_stocks(Portfolio& portfolio, 
+                        std::map<std::string, double>& prices,
+                        std::map<std::string, Stock*>& stock_ptrs) {
+        for (size_t i = 0; i < portfolio.get_position_count(); ++i) {
+            Position& pos = portfolio.get_position(i);
+            Instrument& inst = pos.get_instrument();
+            
+            // Check if it's a Stock
+            if (auto* stock = dynamic_cast<Stock*>(&inst)) {
+                const std::string& ticker = stock->get_ticker();
+                if (prices.find(ticker) == prices.end()) {
+                    prices[ticker] = stock->get_price();
+                    stock_ptrs[ticker] = stock;
+                }
+            }
+            // Check if it's an Option (need to get underlying)
+            else if (auto* option = dynamic_cast<Option*>(&inst)) {
+                const Stock& underlying = option->get_underlying();
+                const std::string& ticker = underlying.get_ticker();
+                if (prices.find(ticker) == prices.end()) {
+                    prices[ticker] = underlying.get_price();
+                    // Note: underlying is const, but the shared_ptr may be modifiable
+                    // We'll update via the stock_ptrs we already collected
+                }
+            }
+        }
+    }
+
+    // Helper: Update options after underlying prices change
+    void update_options(Portfolio& portfolio, double dt) {
+        for (size_t i = 0; i < portfolio.get_position_count(); ++i) {
+            Position& pos = portfolio.get_position(i);
+            Instrument& inst = pos.get_instrument();
+            
+            if (auto* option = dynamic_cast<Option*>(&inst)) {
+                // Decay time to expiry
+                double new_tte = option->get_time_to_expiry() - dt;
+                option->set_time_to_expiry(std::max(0.0, new_tte));
+                
+                // Re-price option based on new underlying price
+                const Stock& underlying = option->get_underlying();
+                if (option->get_time_to_expiry() > 0) {
+                    double S = underlying.get_price();
+                    double K = option->get_strike();
+                    double T = option->get_time_to_expiry();
+                    bool is_call = (option->get_type() == Option::Type::Call);
+                    
+                    // Get vol/rate from market environment or model
+                    double new_price;
+                    if (market_env_.get_correlation_matrix().size() > 0) {
+                        new_price = model_->price_option(S, K, T, 
+                            underlying.get_ticker(), market_env_, is_call);
+                    } else {
+                        double r = dynamic_cast<BlackScholesModel*>(model_.get())->get_rate();
+                        double sigma = dynamic_cast<BlackScholesModel*>(model_.get())->get_volatility();
+                        new_price = model_->price_option(S, K, T, r, sigma, is_call);
+                    }
+                    option->set_price(new_price);
+                } else {
+                    // At expiry - intrinsic value only
+                    double S = underlying.get_price();
+                    double K = option->get_strike();
+                    bool is_call = (option->get_type() == Option::Type::Call);
+                    double intrinsic = is_call ? std::max(0.0, S - K) : std::max(0.0, K - S);
+                    option->set_price(intrinsic);
+                }
+            }
+        }
+    }
 };
 
 #endif
