@@ -86,49 +86,65 @@ CMakeFiles/riskEngine.dir/src/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/riskEngine.dir/src/main.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/ettoremiglioranza/Projects/riskEngine/src/main.cpp -o CMakeFiles/riskEngine.dir/src/main.cpp.s
 
-CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.o: CMakeFiles/riskEngine.dir/flags.make
-CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.o: /Users/ettoremiglioranza/Projects/riskEngine/src/marketSimulator.cpp
-CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.o: CMakeFiles/riskEngine.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/ettoremiglioranza/Projects/riskEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.o -MF CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.o.d -o CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.o -c /Users/ettoremiglioranza/Projects/riskEngine/src/marketSimulator.cpp
+CMakeFiles/riskEngine.dir/src/instrument.cpp.o: CMakeFiles/riskEngine.dir/flags.make
+CMakeFiles/riskEngine.dir/src/instrument.cpp.o: /Users/ettoremiglioranza/Projects/riskEngine/src/instrument.cpp
+CMakeFiles/riskEngine.dir/src/instrument.cpp.o: CMakeFiles/riskEngine.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/ettoremiglioranza/Projects/riskEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/riskEngine.dir/src/instrument.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/riskEngine.dir/src/instrument.cpp.o -MF CMakeFiles/riskEngine.dir/src/instrument.cpp.o.d -o CMakeFiles/riskEngine.dir/src/instrument.cpp.o -c /Users/ettoremiglioranza/Projects/riskEngine/src/instrument.cpp
 
-CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/ettoremiglioranza/Projects/riskEngine/src/marketSimulator.cpp > CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.i
+CMakeFiles/riskEngine.dir/src/instrument.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/riskEngine.dir/src/instrument.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/ettoremiglioranza/Projects/riskEngine/src/instrument.cpp > CMakeFiles/riskEngine.dir/src/instrument.cpp.i
 
-CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/ettoremiglioranza/Projects/riskEngine/src/marketSimulator.cpp -o CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.s
+CMakeFiles/riskEngine.dir/src/instrument.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/riskEngine.dir/src/instrument.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/ettoremiglioranza/Projects/riskEngine/src/instrument.cpp -o CMakeFiles/riskEngine.dir/src/instrument.cpp.s
 
-CMakeFiles/riskEngine.dir/src/portfolio.cpp.o: CMakeFiles/riskEngine.dir/flags.make
-CMakeFiles/riskEngine.dir/src/portfolio.cpp.o: /Users/ettoremiglioranza/Projects/riskEngine/src/portfolio.cpp
-CMakeFiles/riskEngine.dir/src/portfolio.cpp.o: CMakeFiles/riskEngine.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/ettoremiglioranza/Projects/riskEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/riskEngine.dir/src/portfolio.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/riskEngine.dir/src/portfolio.cpp.o -MF CMakeFiles/riskEngine.dir/src/portfolio.cpp.o.d -o CMakeFiles/riskEngine.dir/src/portfolio.cpp.o -c /Users/ettoremiglioranza/Projects/riskEngine/src/portfolio.cpp
+CMakeFiles/riskEngine.dir/src/visitor.cpp.o: CMakeFiles/riskEngine.dir/flags.make
+CMakeFiles/riskEngine.dir/src/visitor.cpp.o: /Users/ettoremiglioranza/Projects/riskEngine/src/visitor.cpp
+CMakeFiles/riskEngine.dir/src/visitor.cpp.o: CMakeFiles/riskEngine.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/ettoremiglioranza/Projects/riskEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/riskEngine.dir/src/visitor.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/riskEngine.dir/src/visitor.cpp.o -MF CMakeFiles/riskEngine.dir/src/visitor.cpp.o.d -o CMakeFiles/riskEngine.dir/src/visitor.cpp.o -c /Users/ettoremiglioranza/Projects/riskEngine/src/visitor.cpp
 
-CMakeFiles/riskEngine.dir/src/portfolio.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/riskEngine.dir/src/portfolio.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/ettoremiglioranza/Projects/riskEngine/src/portfolio.cpp > CMakeFiles/riskEngine.dir/src/portfolio.cpp.i
+CMakeFiles/riskEngine.dir/src/visitor.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/riskEngine.dir/src/visitor.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/ettoremiglioranza/Projects/riskEngine/src/visitor.cpp > CMakeFiles/riskEngine.dir/src/visitor.cpp.i
 
-CMakeFiles/riskEngine.dir/src/portfolio.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/riskEngine.dir/src/portfolio.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/ettoremiglioranza/Projects/riskEngine/src/portfolio.cpp -o CMakeFiles/riskEngine.dir/src/portfolio.cpp.s
+CMakeFiles/riskEngine.dir/src/visitor.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/riskEngine.dir/src/visitor.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/ettoremiglioranza/Projects/riskEngine/src/visitor.cpp -o CMakeFiles/riskEngine.dir/src/visitor.cpp.s
+
+CMakeFiles/riskEngine.dir/src/model.cpp.o: CMakeFiles/riskEngine.dir/flags.make
+CMakeFiles/riskEngine.dir/src/model.cpp.o: /Users/ettoremiglioranza/Projects/riskEngine/src/model.cpp
+CMakeFiles/riskEngine.dir/src/model.cpp.o: CMakeFiles/riskEngine.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/ettoremiglioranza/Projects/riskEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/riskEngine.dir/src/model.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/riskEngine.dir/src/model.cpp.o -MF CMakeFiles/riskEngine.dir/src/model.cpp.o.d -o CMakeFiles/riskEngine.dir/src/model.cpp.o -c /Users/ettoremiglioranza/Projects/riskEngine/src/model.cpp
+
+CMakeFiles/riskEngine.dir/src/model.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/riskEngine.dir/src/model.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/ettoremiglioranza/Projects/riskEngine/src/model.cpp > CMakeFiles/riskEngine.dir/src/model.cpp.i
+
+CMakeFiles/riskEngine.dir/src/model.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/riskEngine.dir/src/model.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/ettoremiglioranza/Projects/riskEngine/src/model.cpp -o CMakeFiles/riskEngine.dir/src/model.cpp.s
 
 # Object files for target riskEngine
 riskEngine_OBJECTS = \
 "CMakeFiles/riskEngine.dir/src/main.cpp.o" \
-"CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.o" \
-"CMakeFiles/riskEngine.dir/src/portfolio.cpp.o"
+"CMakeFiles/riskEngine.dir/src/instrument.cpp.o" \
+"CMakeFiles/riskEngine.dir/src/visitor.cpp.o" \
+"CMakeFiles/riskEngine.dir/src/model.cpp.o"
 
 # External object files for target riskEngine
 riskEngine_EXTERNAL_OBJECTS =
 
 riskEngine: CMakeFiles/riskEngine.dir/src/main.cpp.o
-riskEngine: CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.o
-riskEngine: CMakeFiles/riskEngine.dir/src/portfolio.cpp.o
+riskEngine: CMakeFiles/riskEngine.dir/src/instrument.cpp.o
+riskEngine: CMakeFiles/riskEngine.dir/src/visitor.cpp.o
+riskEngine: CMakeFiles/riskEngine.dir/src/model.cpp.o
 riskEngine: CMakeFiles/riskEngine.dir/build.make
 riskEngine: CMakeFiles/riskEngine.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/ettoremiglioranza/Projects/riskEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable riskEngine"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/ettoremiglioranza/Projects/riskEngine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable riskEngine"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/riskEngine.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

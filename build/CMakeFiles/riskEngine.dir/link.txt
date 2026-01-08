@@ -1,1 +1,1 @@
-/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/riskEngine.dir/src/main.cpp.o CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.o CMakeFiles/riskEngine.dir/src/portfolio.cpp.o -o riskEngine
+/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/riskEngine.dir/src/main.cpp.o CMakeFiles/riskEngine.dir/src/instrument.cpp.o CMakeFiles/riskEngine.dir/src/visitor.cpp.o CMakeFiles/riskEngine.dir/src/model.cpp.o -o riskEngine

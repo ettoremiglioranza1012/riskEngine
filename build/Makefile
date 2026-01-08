@@ -129,6 +129,30 @@ riskEngine/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/build
 .PHONY : riskEngine/fast
 
+src/instrument.o: src/instrument.cpp.o
+.PHONY : src/instrument.o
+
+# target to build an object file
+src/instrument.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/instrument.cpp.o
+.PHONY : src/instrument.cpp.o
+
+src/instrument.i: src/instrument.cpp.i
+.PHONY : src/instrument.i
+
+# target to preprocess a source file
+src/instrument.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/instrument.cpp.i
+.PHONY : src/instrument.cpp.i
+
+src/instrument.s: src/instrument.cpp.s
+.PHONY : src/instrument.s
+
+# target to generate assembly for a file
+src/instrument.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/instrument.cpp.s
+.PHONY : src/instrument.cpp.s
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -153,53 +177,53 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
-src/marketSimulator.o: src/marketSimulator.cpp.o
-.PHONY : src/marketSimulator.o
+src/model.o: src/model.cpp.o
+.PHONY : src/model.o
 
 # target to build an object file
-src/marketSimulator.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.o
-.PHONY : src/marketSimulator.cpp.o
+src/model.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/model.cpp.o
+.PHONY : src/model.cpp.o
 
-src/marketSimulator.i: src/marketSimulator.cpp.i
-.PHONY : src/marketSimulator.i
+src/model.i: src/model.cpp.i
+.PHONY : src/model.i
 
 # target to preprocess a source file
-src/marketSimulator.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.i
-.PHONY : src/marketSimulator.cpp.i
+src/model.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/model.cpp.i
+.PHONY : src/model.cpp.i
 
-src/marketSimulator.s: src/marketSimulator.cpp.s
-.PHONY : src/marketSimulator.s
+src/model.s: src/model.cpp.s
+.PHONY : src/model.s
 
 # target to generate assembly for a file
-src/marketSimulator.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/marketSimulator.cpp.s
-.PHONY : src/marketSimulator.cpp.s
+src/model.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/model.cpp.s
+.PHONY : src/model.cpp.s
 
-src/portfolio.o: src/portfolio.cpp.o
-.PHONY : src/portfolio.o
+src/visitor.o: src/visitor.cpp.o
+.PHONY : src/visitor.o
 
 # target to build an object file
-src/portfolio.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/portfolio.cpp.o
-.PHONY : src/portfolio.cpp.o
+src/visitor.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/visitor.cpp.o
+.PHONY : src/visitor.cpp.o
 
-src/portfolio.i: src/portfolio.cpp.i
-.PHONY : src/portfolio.i
+src/visitor.i: src/visitor.cpp.i
+.PHONY : src/visitor.i
 
 # target to preprocess a source file
-src/portfolio.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/portfolio.cpp.i
-.PHONY : src/portfolio.cpp.i
+src/visitor.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/visitor.cpp.i
+.PHONY : src/visitor.cpp.i
 
-src/portfolio.s: src/portfolio.cpp.s
-.PHONY : src/portfolio.s
+src/visitor.s: src/visitor.cpp.s
+.PHONY : src/visitor.s
 
 # target to generate assembly for a file
-src/portfolio.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/portfolio.cpp.s
-.PHONY : src/portfolio.cpp.s
+src/visitor.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/riskEngine.dir/build.make CMakeFiles/riskEngine.dir/src/visitor.cpp.s
+.PHONY : src/visitor.cpp.s
 
 # Help Target
 help:
@@ -210,15 +234,18 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... riskEngine"
+	@echo "... src/instrument.o"
+	@echo "... src/instrument.i"
+	@echo "... src/instrument.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
-	@echo "... src/marketSimulator.o"
-	@echo "... src/marketSimulator.i"
-	@echo "... src/marketSimulator.s"
-	@echo "... src/portfolio.o"
-	@echo "... src/portfolio.i"
-	@echo "... src/portfolio.s"
+	@echo "... src/model.o"
+	@echo "... src/model.i"
+	@echo "... src/model.s"
+	@echo "... src/visitor.o"
+	@echo "... src/visitor.i"
+	@echo "... src/visitor.s"
 .PHONY : help
 
 

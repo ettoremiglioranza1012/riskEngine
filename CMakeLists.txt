@@ -10,8 +10,9 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 # Source files
 set(SOURCES
     src/main.cpp
-    src/marketSimulator.cpp
-    src/portfolio.cpp
+    src/instrument.cpp
+    src/visitor.cpp
+    src/model.cpp
 )
 
 # Create executable
