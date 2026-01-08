@@ -10,6 +10,134 @@
 #include <cmath>
 #include <stdexcept>
 #include <algorithm>
+#include <random>
+
+// ============================================================================
+// CORRELATION MATRIX - For multi-asset simulation
+// Stores correlation structure and provides Cholesky decomposition
+// ============================================================================
+
+class CorrelationMatrix {
+public:
+    // Default: Empty (will treat all assets as uncorrelated)
+    CorrelationMatrix() = default;
+
+    // Construct from list of tickers and correlation matrix
+    // corr_matrix must be symmetric positive semi-definite
+    CorrelationMatrix(const std::vector<std::string>& tickers,
+                      const std::vector<std::vector<double>>& corr_matrix)
+        : tickers_(tickers), corr_matrix_(corr_matrix) {
+        
+        size_t n = tickers.size();
+        if (corr_matrix.size() != n) {
+            throw std::invalid_argument("Correlation matrix size must match ticker count");
+        }
+        for (const auto& row : corr_matrix) {
+            if (row.size() != n) {
+                throw std::invalid_argument("Correlation matrix must be square");
+            }
+        }
+        
+        // Build ticker index map for O(1) lookup
+        for (size_t i = 0; i < tickers.size(); ++i) {
+            ticker_index_[tickers[i]] = i;
+        }
+        
+        // Compute Cholesky decomposition L where Σ = L * L^T
+        compute_cholesky();
+    }
+
+    // Get correlation between two assets
+    double get_correlation(const std::string& ticker1, const std::string& ticker2) const {
+        auto it1 = ticker_index_.find(ticker1);
+        auto it2 = ticker_index_.find(ticker2);
+        
+        if (it1 == ticker_index_.end() || it2 == ticker_index_.end()) {
+            // Unknown assets assumed uncorrelated
+            return (ticker1 == ticker2) ? 1.0 : 0.0;
+        }
+        
+        return corr_matrix_[it1->second][it2->second];
+    }
+
+    // Generate correlated random numbers from independent standard normals
+    // Input: vector of independent N(0,1) random variates (one per asset)
+    // Output: vector of correlated N(0,1) random variates
+    // z_correlated = L * z_independent (where L is Cholesky factor)
+    std::vector<double> correlate(const std::vector<double>& independent_z) const {
+        size_t n = cholesky_.size();
+        if (independent_z.size() != n) {
+            throw std::invalid_argument("Independent Z vector size must match asset count");
+        }
+        
+        std::vector<double> correlated_z(n, 0.0);
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = 0; j <= i; ++j) {  // L is lower triangular
+                correlated_z[i] += cholesky_[i][j] * independent_z[j];
+            }
+        }
+        return correlated_z;
+    }
+
+    // Get the Cholesky factor L (lower triangular)
+    const std::vector<std::vector<double>>& get_cholesky() const { return cholesky_; }
+
+    // Get asset index for a ticker (throws if not found)
+    size_t get_asset_index(const std::string& ticker) const {
+        auto it = ticker_index_.find(ticker);
+        if (it == ticker_index_.end()) {
+            throw std::runtime_error("Asset not in correlation matrix: " + ticker);
+        }
+        return it->second;
+    }
+
+    // Check if ticker is in the correlation matrix
+    bool has_ticker(const std::string& ticker) const {
+        return ticker_index_.find(ticker) != ticker_index_.end();
+    }
+
+    size_t size() const { return tickers_.size(); }
+    const std::vector<std::string>& get_tickers() const { return tickers_; }
+
+private:
+    std::vector<std::string> tickers_;
+    std::map<std::string, size_t> ticker_index_;
+    std::vector<std::vector<double>> corr_matrix_;
+    std::vector<std::vector<double>> cholesky_;  // Lower triangular L where Σ = L * L^T
+
+    // Cholesky-Banachiewicz algorithm for L * L^T decomposition
+    void compute_cholesky() {
+        size_t n = corr_matrix_.size();
+        cholesky_.assign(n, std::vector<double>(n, 0.0));
+        
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = 0; j <= i; ++j) {
+                double sum = 0.0;
+                
+                if (i == j) {
+                    // Diagonal element: L[i][i] = sqrt(Σ[i][i] - Σ L[i][k]^2)
+                    for (size_t k = 0; k < j; ++k) {
+                        sum += cholesky_[j][k] * cholesky_[j][k];
+                    }
+                    double val = corr_matrix_[i][i] - sum;
+                    if (val < 0) {
+                        throw std::runtime_error("Correlation matrix is not positive semi-definite");
+                    }
+                    cholesky_[i][j] = std::sqrt(val);
+                } else {
+                    // Off-diagonal: L[i][j] = (Σ[i][j] - Σ L[i][k]*L[j][k]) / L[j][j]
+                    for (size_t k = 0; k < j; ++k) {
+                        sum += cholesky_[i][k] * cholesky_[j][k];
+                    }
+                    if (cholesky_[j][j] == 0) {
+                        throw std::runtime_error("Zero diagonal in Cholesky decomposition");
+                    }
+                    cholesky_[i][j] = (corr_matrix_[i][j] - sum) / cholesky_[j][j];
+                }
+            }
+        }
+    }
+};
 
 // ============================================================================
 // YIELD CURVE - Term structure of interest rates
@@ -330,6 +458,27 @@ public:
     // Advance time by dt (for simulation)
     void advance_time(double dt) { valuation_date_ += dt; }
 
+    // ========================================================================
+    // CORRELATION MATRIX
+    // ========================================================================
+
+    void set_correlation_matrix(const CorrelationMatrix& corr) {
+        correlation_matrix_ = corr;
+    }
+
+    const CorrelationMatrix& get_correlation_matrix() const {
+        return correlation_matrix_;
+    }
+
+    double get_correlation(const std::string& ticker1, const std::string& ticker2) const {
+        return correlation_matrix_.get_correlation(ticker1, ticker2);
+    }
+
+    // Generate correlated random numbers for all assets in the correlation matrix
+    std::vector<double> generate_correlated_z(const std::vector<double>& independent_z) const {
+        return correlation_matrix_.correlate(independent_z);
+    }
+
 private:
     // Spot prices by ticker
     std::map<std::string, double> spots_;
@@ -345,6 +494,9 @@ private:
     // Dividend curves by ticker
     std::map<std::string, DividendCurve> dividend_curves_;
     DividendCurve default_dividend_curve_{0.0};
+
+    // Correlation matrix for multi-asset simulation
+    CorrelationMatrix correlation_matrix_;
 
     // Current valuation date (in years from start)
     double valuation_date_ = 0.0;

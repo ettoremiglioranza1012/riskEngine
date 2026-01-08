@@ -8,6 +8,7 @@
 #include <cmath>
 #include <vector>
 #include <string>
+#include <map>
 
 // Forward declaration
 class MarketEnvironment;
@@ -26,11 +27,26 @@ class Model {
 public:
     virtual ~Model() = default;
 
-    // Simulate one time step, returns the new price
+    // ========================================================================
+    // SIMULATION - Two interfaces:
+    // 1. Legacy: generates random internally (DANGER: uncorrelated!)
+    // 2. Correct: accepts external random number (allows correlation)
+    // ========================================================================
+
+    // LEGACY: Simulate one time step with internal RNG (UNCORRELATED - use with caution!)
     virtual double simulate_step(double current_price, double dt) = 0;
+
+    // CORRECT: Simulate with externally provided random number
+    // This allows correlated simulation via Cholesky decomposition
+    virtual double simulate_step(double current_price, double dt, double random_z) = 0;
 
     // Simulate with market environment (uses appropriate vol/rate from curves)
     virtual double simulate_step(double current_price, double dt, 
+                                  const std::string& ticker,
+                                  const MarketEnvironment& env) = 0;
+
+    // Simulate with market environment AND external random (BEST)
+    virtual double simulate_step(double current_price, double dt, double random_z,
                                   const std::string& ticker,
                                   const MarketEnvironment& env) = 0;
 
@@ -65,17 +81,27 @@ public:
     BlackScholesModel(double rate = 0.05, double volatility = 0.20, unsigned seed = 42)
         : rate_(rate), volatility_(volatility), generator_(seed), normal_dist_(0.0, 1.0) {}
 
-    // GBM simulation step (uses model's rate/vol)
+    // LEGACY: GBM simulation step with internal RNG (UNCORRELATED!)
     double simulate_step(double current_price, double dt) override {
         double z = normal_dist_(generator_);
+        return simulate_step(current_price, dt, z);
+    }
+
+    // CORRECT: GBM simulation step with external random number
+    double simulate_step(double current_price, double dt, double random_z) override {
         // S(t+dt) = S(t) * exp((r - 0.5*σ²)dt + σ√dt * Z)
         double drift = (rate_ - 0.5 * volatility_ * volatility_) * dt;
-        double diffusion = volatility_ * std::sqrt(dt) * z;
+        double diffusion = volatility_ * std::sqrt(dt) * random_z;
         return current_price * std::exp(drift + diffusion);
     }
 
-    // GBM simulation step using market environment
+    // GBM simulation step using market environment (internal RNG)
     double simulate_step(double current_price, double dt,
+                          const std::string& ticker,
+                          const MarketEnvironment& env) override;
+
+    // GBM simulation step using market environment AND external random (BEST)
+    double simulate_step(double current_price, double dt, double random_z,
                           const std::string& ticker,
                           const MarketEnvironment& env) override;
 
@@ -251,15 +277,20 @@ public:
           generator_(seed), normal_dist_(0.0, 1.0), 
           poisson_dist_(jump_intensity), jump_size_dist_(jump_mean, jump_vol) {}
 
+    // LEGACY: simulate with internal RNG (UNCORRELATED!)
     double simulate_step(double current_price, double dt) override {
         double z = normal_dist_(generator_);
-        
+        return simulate_step(current_price, dt, z);
+    }
+
+    // CORRECT: simulate with external random number (allows correlation)
+    double simulate_step(double current_price, double dt, double random_z) override {
         // GBM component
         double k = std::exp(jump_mean_ + 0.5 * jump_vol_ * jump_vol_) - 1.0;
         double drift = (rate_ - jump_intensity_ * k - 0.5 * volatility_ * volatility_) * dt;
-        double diffusion = volatility_ * std::sqrt(dt) * z;
+        double diffusion = volatility_ * std::sqrt(dt) * random_z;
         
-        // Jump component (Poisson process)
+        // Jump component (Poisson process) - note: jumps are idiosyncratic (independent)
         int num_jumps = poisson_dist_(generator_);
         double jump_component = 0.0;
         for (int i = 0; i < num_jumps; ++i) {
@@ -269,8 +300,13 @@ public:
         return current_price * std::exp(drift + diffusion + jump_component);
     }
 
-    // Simulate with market environment
+    // Simulate with market environment (internal RNG)
     double simulate_step(double current_price, double dt,
+                          const std::string& ticker,
+                          const MarketEnvironment& env) override;
+
+    // Simulate with market environment AND external random (BEST)
+    double simulate_step(double current_price, double dt, double random_z,
                           const std::string& ticker,
                           const MarketEnvironment& env) override;
 
@@ -316,6 +352,46 @@ private:
     mutable std::normal_distribution<double> normal_dist_;
     mutable std::poisson_distribution<int> poisson_dist_;
     mutable std::normal_distribution<double> jump_size_dist_;
+};
+
+// ============================================================================
+// MULTI-ASSET SIMULATOR - Generates correlated market moves
+// Uses Cholesky decomposition: Z_correlated = L * Z_independent
+// ============================================================================
+
+class MultiAssetSimulator {
+public:
+    MultiAssetSimulator(Model& model, unsigned seed = 42)
+        : model_(model), generator_(seed), normal_dist_(0.0, 1.0) {}
+
+    // Generate correlated random numbers for a set of assets
+    // Returns map: ticker -> correlated Z
+    std::map<std::string, double> generate_correlated_shocks(
+        const std::vector<std::string>& tickers,
+        const MarketEnvironment& env);
+
+    // Simulate one market-wide step for all assets (CORRELATED)
+    // Returns map: ticker -> new price
+    std::map<std::string, double> simulate_market_step(
+        const std::map<std::string, double>& current_prices,
+        double dt,
+        const MarketEnvironment& env);
+
+    // Simulate multiple paths for portfolio-wide VaR
+    // Returns: [path_idx][ticker] -> final price
+    std::vector<std::map<std::string, double>> simulate_portfolio_paths(
+        const std::map<std::string, double>& initial_prices,
+        double T,
+        size_t num_paths,
+        size_t steps_per_year,
+        const MarketEnvironment& env);
+
+    void set_seed(unsigned seed) { generator_.seed(seed); }
+
+private:
+    Model& model_;
+    mutable std::mt19937 generator_;
+    mutable std::normal_distribution<double> normal_dist_;
 };
 
 #endif

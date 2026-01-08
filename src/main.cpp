@@ -86,6 +86,24 @@ int main() {
         market_env.set_spot("TSLA", 250.0);
         market_env.set_spot("GOOGL", 140.0);
 
+        // ====================================================================
+        // CORRELATION MATRIX - Critical for realistic risk simulation!
+        // Without this, we underestimate portfolio risk because assets
+        // appear to diversify away when they actually move together.
+        // ====================================================================
+        
+        // Realistic equity correlations (based on historical data)
+        // In a crash, correlations converge to ~1.0 (not modeled here - would need DCC-GARCH)
+        std::vector<std::string> corr_tickers = {"AAPL", "GOOGL", "TSLA"};
+        std::vector<std::vector<double>> corr_matrix = {
+            //   AAPL  GOOGL  TSLA
+            {   1.00,  0.65,  0.45},  // AAPL: High correlation with GOOGL (both big tech)
+            {   0.65,  1.00,  0.40},  // GOOGL: Moderate correlation with TSLA
+            {   0.45,  0.40,  1.00}   // TSLA: Lower correlation (more idiosyncratic)
+        };
+        CorrelationMatrix equity_corr(corr_tickers, corr_matrix);
+        market_env.set_correlation_matrix(equity_corr);
+
         // Create market simulator with Black-Scholes model
         // Uses flat vol/rate for legacy compatibility, but also supports MarketEnvironment
         auto bs_model = std::make_unique<BlackScholesModel>(0.05, 0.20, 42);
@@ -126,8 +144,8 @@ int main() {
 
         // Display header
         std::cout << "╔══════════════════════════════════════════════════════════╗" << std::endl;
-        std::cout << "║   RISK ENGINE - WITH MARKET ENVIRONMENT                  ║" << std::endl;
-        std::cout << "║   Term Structures: Yield Curve + Vol Surfaces            ║" << std::endl;
+        std::cout << "║   RISK ENGINE - CORRELATED SIMULATION                    ║" << std::endl;
+        std::cout << "║   Cholesky Decomposition for Multi-Asset Dynamics        ║" << std::endl;
         std::cout << "╚══════════════════════════════════════════════════════════╝" << std::endl;
         std::cout << std::endl;
 
@@ -143,12 +161,25 @@ int main() {
         std::cout << "    GOOGL: " << (market_env.get_vol("GOOGL", 140, 0.5) * 100) << "%" << std::endl;
         std::cout << std::endl;
 
-        // Show vol skew
-        std::cout << "  AAPL Vol Smile (0.5y expiry):" << std::endl;
-        std::cout << "    K=120: " << (market_env.get_vol("AAPL", 120, 0.5) * 100) << "%" << std::endl;
-        std::cout << "    K=140: " << (market_env.get_vol("AAPL", 140, 0.5) * 100) << "%" << std::endl;
-        std::cout << "    K=160 (ATM): " << (market_env.get_vol("AAPL", 160, 0.5) * 100) << "%" << std::endl;
-        std::cout << "    K=180: " << (market_env.get_vol("AAPL", 180, 0.5) * 100) << "%" << std::endl;
+        // Display correlation matrix
+        std::cout << "  Correlation Matrix:" << std::endl;
+        std::cout << "           AAPL   GOOGL   TSLA" << std::endl;
+        std::cout << "    AAPL   1.00   0.65    0.45" << std::endl;
+        std::cout << "    GOOGL  0.65   1.00    0.40" << std::endl;
+        std::cout << "    TSLA   0.45   0.40    1.00" << std::endl;
+        std::cout << std::endl;
+
+        // Show Cholesky factor (lower triangular L where Σ = L*L^T)
+        const auto& L = market_env.get_correlation_matrix().get_cholesky();
+        std::cout << "  Cholesky Factor L (Z_corr = L * Z_indep):" << std::endl;
+        std::cout << std::setprecision(4);
+        for (size_t i = 0; i < L.size(); ++i) {
+            std::cout << "    ";
+            for (size_t j = 0; j < L[i].size(); ++j) {
+                std::cout << std::setw(8) << L[i][j];
+            }
+            std::cout << std::endl;
+        }
         std::cout << std::endl;
 
         std::cout << "=== Initial Portfolio Values ===" << std::endl;
@@ -171,11 +202,82 @@ int main() {
         // DEMONSTRATE VISITOR PATTERN - Same data, different simulation methods
         // ====================================================================
 
-        std::cout << "=== Monte Carlo Simulation (252 days) ===" << std::endl;
+        std::cout << "=== Monte Carlo Simulation (252 days) - UNCORRELATED ===" << std::endl;
+        std::cout << "    (Legacy method - each asset simulated independently)" << std::endl;
         market.simulate_days(252);
         std::cout << "Retirement: $" << market.get_portfolio_value(id_retirement) << std::endl;
         std::cout << "Savings:    $" << market.get_portfolio_value(id_savings) << std::endl;
         std::cout << "Aggressive: $" << market.get_portfolio_value(id_aggressive) << std::endl;
+        std::cout << std::endl;
+
+        // ====================================================================
+        // CORRELATED SIMULATION using MultiAssetSimulator
+        // This is the CORRECT way to simulate - assets move together!
+        // ====================================================================
+        
+        std::cout << "=== Correlated Multi-Asset Simulation ===" << std::endl;
+        std::cout << "    (Using Cholesky decomposition for joint dynamics)" << std::endl;
+        
+        // Reset prices to initial values
+        apple->set_price(150.0);
+        google->set_price(140.0);
+        tesla->set_price(250.0);
+        
+        // Create multi-asset simulator
+        BlackScholesModel bs_corr(0.05, 0.20, 123);  // Different seed for comparison
+        MultiAssetSimulator multi_sim(bs_corr, 123);
+        
+        // Initial prices
+        std::map<std::string, double> prices = {
+            {"AAPL", 150.0},
+            {"GOOGL", 140.0},
+            {"TSLA", 250.0}
+        };
+        
+        // Simulate 10 paths to show correlation in action
+        std::cout << std::endl << "  Sample paths (10 paths, 252 steps each):" << std::endl;
+        std::cout << "  Path    AAPL      GOOGL     TSLA      Observation" << std::endl;
+        std::cout << "  ----    ----      -----     ----      -----------" << std::endl;
+        
+        size_t corr_moves = 0;  // Count when all assets move same direction
+        for (int path = 0; path < 10; ++path) {
+            auto final_prices = prices;
+            double dt = 1.0 / 252.0;
+            
+            // Track daily moves for correlation check
+            std::vector<double> aapl_returns, googl_returns, tsla_returns;
+            
+            for (int step = 0; step < 252; ++step) {
+                auto prev = final_prices;
+                final_prices = multi_sim.simulate_market_step(final_prices, dt, market_env);
+                
+                if (step == 0) {  // Just check first step direction
+                    double r_aapl = (final_prices["AAPL"] - prev["AAPL"]) / prev["AAPL"];
+                    double r_googl = (final_prices["GOOGL"] - prev["GOOGL"]) / prev["GOOGL"];
+                    double r_tsla = (final_prices["TSLA"] - prev["TSLA"]) / prev["TSLA"];
+                    
+                    // Check if all moved same direction
+                    if ((r_aapl > 0 && r_googl > 0 && r_tsla > 0) ||
+                        (r_aapl < 0 && r_googl < 0 && r_tsla < 0)) {
+                        corr_moves++;
+                    }
+                }
+            }
+            
+            std::string obs = (final_prices["AAPL"] > prices["AAPL"] && 
+                              final_prices["GOOGL"] > prices["GOOGL"]) ? "AAPL↑ GOOGL↑ (corr)" : "";
+            
+            std::cout << "  " << std::setw(4) << (path + 1)
+                      << "  $" << std::setw(6) << std::setprecision(2) << final_prices["AAPL"]
+                      << "   $" << std::setw(6) << final_prices["GOOGL"]
+                      << "   $" << std::setw(6) << final_prices["TSLA"]
+                      << "   " << obs << std::endl;
+        }
+        
+        std::cout << std::endl;
+        std::cout << "  Paths where first step had all assets moving same direction: " 
+                  << corr_moves << "/10" << std::endl;
+        std::cout << "  (With ρ=0.65 correlation, we expect ~70% concordant moves)" << std::endl;
         std::cout << std::endl;
 
         // Apply stress test - 2008 financial crisis scenario
